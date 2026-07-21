@@ -8,6 +8,8 @@ The screen only requires power.  Connect the purple wire on the breakout lead to
 
 <img width="600" height="382" alt="ESP32-S3-LCD-1 69_240718_001" src="https://github.com/user-attachments/assets/4a0e4e70-47c3-499e-a530-6ff10dd3b643" />
 
+
+
 **Use**
 
 Note the IMU calibrates itself at boot, the plane should be level when powering on.
