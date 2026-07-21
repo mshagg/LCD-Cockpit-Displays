@@ -1,4 +1,5 @@
 **Overview**
+
 The code is infinitely adjustable, but two key changes you may wish to make are:
 - IMU filtering (to increase/reduce responsiveness of the display, at the expense of IMU noise e.g. from vibrations)
 - Neutral pitch angle (if your cockpit is not 90 degrees perpendicular to gravity)
