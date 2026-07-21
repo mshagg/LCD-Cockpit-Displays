@@ -29,19 +29,19 @@ If you need to configure any display options, you can make the required edits in
 
 The built-in display is driven as an ST7789/ST7789V2 SPI display with these pins:
 
-LCD_DC     GPIO4
-LCD_CS     GPIO5
-LCD_SCK    GPIO6
-LCD_MOSI   GPIO7
-LCD_RST    GPIO8
-LCD_BL     GPIO15
+-LCD_DC     GPIO4
+-LCD_CS     GPIO5
+-LCD_SCK    GPIO6
+-LCD_MOSI   GPIO7
+-LCD_RST    GPIO8
+-LCD_BL     GPIO15
 
 The onboard QMI8658 IMU is read over I2C:
 
-IMU_SDA    GPIO11
-IMU_SCL    GPIO10
+-IMU_SDA    GPIO11
+-IMU_SCL    GPIO10
 
 The PWR/function button is read on:
 
-BUTTON_PWR_PIN    GPIO40
-SYS_EN_PIN        GPIO41
+-BUTTON_PWR_PIN    GPIO40
+-SYS_EN_PIN        GPIO41
