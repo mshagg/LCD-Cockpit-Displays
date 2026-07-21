@@ -6,13 +6,15 @@
 
   Added:
   - remembers last selected screen using ESP32 Preferences / NVS
+  - adds full-screen Tron AHI as a separate selectable screen
 
   Tabs:
   - waveshare_horizon_test.ino          main setup / loop / screen switching
   - screen_artificial_horizon.ino       full-screen artificial horizon
   - screen_classic_ahi.ino              classic round AHI screen
   - screen_glass_ahi.ino                glass-style AHI screen
-  - screen_tron_ahi.ino                 futuristic Tron-style AHI screen
+  - screen_tron_ahi.ino                 futuristic Tron-style framed AHI screen
+  - screen_tron_full_ahi.ino            futuristic Tron-style full-screen AHI
   - imu_qmi8658.ino                     onboard IMU attitude source
   - buttons.ino                         power button screen switching
 
@@ -115,7 +117,8 @@ enum ScreenId {
   SCREEN_FULL_AHI,
   SCREEN_CLASSIC_AHI,
   SCREEN_GLASS_AHI,
-  SCREEN_TRON_AHI
+  SCREEN_TRON_AHI,
+  SCREEN_TRON_FULL_AHI
 };
 
 // Default used only if no saved screen exists.
@@ -138,6 +141,7 @@ void drawArtificialHorizonScreen(Arduino_GFX *display, float roll, float pitch);
 void drawClassicAhiScreen(Arduino_Canvas *display, float roll, float pitch);
 void drawGlassAhiScreen(Arduino_Canvas *display, float roll, float pitch);
 void drawTronAhiScreen(Arduino_Canvas *display, float roll, float pitch);
+void drawTronFullAhiScreen(Arduino_Canvas *display, float roll, float pitch);
 
 void setupIMU();
 void updateImuAttitude();
@@ -151,9 +155,6 @@ void updateButtons();
 
 void setup()
 {
-  Serial.begin(115200);
-  delay(1000);
-
   // Open ESP32 non-volatile storage.
   // false = read/write mode.
   preferences.begin(PREF_NAMESPACE, false);
@@ -165,14 +166,12 @@ void setup()
   digitalWrite(LCD_BL, HIGH);
 
   if (!gfx->begin()) {
-    Serial.println("gfx->begin() failed");
     while (true) {
       delay(1000);
     }
   }
 
   if (!canvas->begin()) {
-    Serial.println("canvas->begin() failed");
     while (true) {
       delay(1000);
     }
@@ -183,12 +182,6 @@ void setup()
 
   setupIMU();
   setupButtons();
-
-  Serial.println("Built-in display ready - portrait mode");
-  Serial.println("PWR/function button cycles: FULL -> CLASSIC -> GLASS -> TRON");
-
-  Serial.print("Restored screen: ");
-  Serial.println(getCurrentScreenName());
 }
 
 void loop()
@@ -200,8 +193,7 @@ void loop()
   drawCurrentScreen();
   canvas->flush();
 
-  // Reduced delay for lower perceived IMU lag.
-  delay(1);
+  delay(5);
 }
 
 // ----------------------------------------------------
@@ -226,6 +218,10 @@ void drawCurrentScreen()
     case SCREEN_TRON_AHI:
       drawTronAhiScreen(canvas, roll, pitch);
       break;
+
+    case SCREEN_TRON_FULL_AHI:
+      drawTronFullAhiScreen(canvas, roll, pitch);
+      break;
   }
 }
 
@@ -241,14 +237,13 @@ void toggleAhiScreen()
     currentScreen = SCREEN_GLASS_AHI;
   } else if (currentScreen == SCREEN_GLASS_AHI) {
     currentScreen = SCREEN_TRON_AHI;
+  } else if (currentScreen == SCREEN_TRON_AHI) {
+    currentScreen = SCREEN_TRON_FULL_AHI;
   } else {
     currentScreen = SCREEN_FULL_AHI;
   }
 
   saveCurrentScreen();
-
-  Serial.print("Main screen: ");
-  Serial.println(getCurrentScreenName());
 }
 
 const char *getCurrentScreenName()
@@ -266,6 +261,9 @@ const char *getCurrentScreenName()
     case SCREEN_TRON_AHI:
       return "TRON AHI";
 
+    case SCREEN_TRON_FULL_AHI:
+      return "TRON FULL AHI";
+
     default:
       return "UNKNOWN";
   }
@@ -282,7 +280,7 @@ void loadLastSelectedScreen()
     SCREEN_TRON_AHI
   );
 
-  if (savedScreen <= SCREEN_TRON_AHI) {
+  if (savedScreen <= SCREEN_TRON_FULL_AHI) {
     currentScreen = (ScreenId)savedScreen;
   } else {
     currentScreen = SCREEN_TRON_AHI;
