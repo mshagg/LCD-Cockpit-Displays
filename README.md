@@ -2,7 +2,7 @@
 
 # LCD-Cockpit-Displays
 
-<img width="1377" height="800" alt="Standalone AHI1" src="https://github.com/user-attachments/assets/97754832-f705-43a2-8c75-6b9066679c85" />
+<img width="1377" height="800" alt="Standalone AHI1" src="https://github.com/user-attachments/assets/f7aba57a-101a-4694-967f-580178a522b1" />
 
 <img width="677" height="800" alt="Standalone AHI2" src="https://github.com/user-attachments/assets/56e3fa6a-7c60-4ad2-98b2-0eeab1e8fb65" />
 
