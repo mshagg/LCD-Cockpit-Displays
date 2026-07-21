@@ -201,7 +201,7 @@ void loop()
   canvas->flush();
 
   // Reduced delay for lower perceived IMU lag.
-  delay(5);
+  delay(1);
 }
 
 // ----------------------------------------------------
