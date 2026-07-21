@@ -197,7 +197,7 @@ void loop()
   drawCurrentScreen();
   canvas->flush();
 
-  delay(5);
+  delay(1);
 }
 
 // ----------------------------------------------------
