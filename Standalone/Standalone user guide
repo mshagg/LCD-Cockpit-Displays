@@ -2,4 +2,7 @@ The standalone scripts are available in both portrait and landscape.  Functional
 
 Currently there are four screens, which can be switched between by short pressing the PWR button on the waveshare board.  The screen will remember which screen was selected.
 
-*Wiring*
+Wiring
+
+The screen only requires power.  
+
