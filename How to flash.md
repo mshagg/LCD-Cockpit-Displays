@@ -10,6 +10,7 @@ https://docs.arduino.cc/software/ide/
 - Install the additional required libraries via the Library Manager:
   - GFX Library for Arduino
   - SensorLib (required for standalone versions, used to access IMU data)
+  - MavLink (required for MAVLink/INAV versions, used to read telemetry data from FC)
 - Select the COM port which appears after connecting the device to USB (Tools > Port)
 
 **Editing and flashing code**
