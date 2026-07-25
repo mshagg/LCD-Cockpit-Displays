@@ -12,7 +12,14 @@ If you are new to Arduino, check the "how to flash" file above.
 
 **Features**
 
-- Selection of graphical AHIs, gauges etc.  Screens can be changed with physical buttons or RC channels.
-- Selection of data pages (nav, battery health etc).  Screens can be changed with physical buttons or RC channels.
-- Highly customisable - choose which screens you want to switch between, adjust stall speed for airspeed indicators etc.
-- High performance - dual core processors and efficient rendering.  Target FPS for graphical elements is ~20FPS for smooth movement 
+- Cockpit-style artificial horizon and flight display
+- Support for compact ESP32-based display hardware
+- IMU-based or MAVLink-based attitude input
+- MAVLink telemetry integration with iNav
+- Pre-flight readiness checks
+- GPS, navigation and home-reference information
+- Battery voltage, current, capacity and throttle monitoring
+- Gear and flap status display
+- Numeric and graphical system pages
+- RC-controlled page selection
+- Modular screen design for adding or changing pages
