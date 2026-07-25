@@ -1,4 +1,6 @@
-**MAVLink**
+**MAVLink/INAV Versions**
+
+Refer to how to flash for Arduino IDE setup.
 
 **Hardware**
 
@@ -33,3 +35,13 @@ set mavlink_pos_rate = 5
 set mavlink_extra2_rate = 5
 
 save
+
+**Customisation**
+
+The code is highly configurable through the config.ino tab.  This includes:
+
+- Defining RC channels for screen selection
+- Including/excluding/ordering specific screens
+- Setting default pages
+- Defining RC channels for gear and flaps
+- Stall/never exceed speeds for airspeed gauges
