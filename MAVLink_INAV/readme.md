@@ -1,1 +1,22 @@
-MAVLink
+**MAVLink**
+
+**Hardware**
+
+_Dual 1.69":_
+
+https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69 (non-touch)
+https://www.waveshare.com/wiki/1.69inch_LCD_Module
+
+**INAV configuration**
+
+The flight controller needs to send MAVLink telemetry to the ESP32.  In order to do so you will require one free UART.  The ESP32 will connect to the Tx pin of this UART.
+
+It is important that the FC Baud rate matches what the ESP32 is expecting.
+
+The following screenshot shows MAVLink telemetry correctly set up on UART8:
+
+<img width="1499" height="301" alt="Screenshot 2026-07-25 212807" src="https://github.com/user-attachments/assets/43994404-f2cc-492b-9541-16b6ecfb983a" />
+
+The standard MAVLink telemetry settings in INAV may not provide certain fields frequently enough.  Enter the following into CLI:
+
+
