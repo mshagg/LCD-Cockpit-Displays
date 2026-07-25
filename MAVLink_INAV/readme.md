@@ -5,6 +5,7 @@
 _Dual 1.69":_
 
 https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69 (non-touch)
+
 https://www.waveshare.com/wiki/1.69inch_LCD_Module
 
 **INAV configuration**
