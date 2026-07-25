@@ -15,10 +15,7 @@ https://docs.arduino.cc/software/ide/
 
 **Editing and flashing code**
 
-Download the code from github:
-
-<img width="453" height="394" alt="Screenshot 2026-07-21 192926" src="https://github.com/user-attachments/assets/0e157a88-a98e-4ff5-9cb4-99574558a7f2" />
-
+Download the code from github.
 
 Each version of the display has its own folder which contains all of the code required to run (eg. standalone_LCD_landscape).  Open the corresponding .ino file (eg. standalone_LCD_landscape.ino).
 
