@@ -2,6 +2,8 @@
 
 **Hardware**
 
+Note: wiring diagrams in each version's subfolder
+
 _Dual 1.69":_
 
 https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69 (non-touch)
