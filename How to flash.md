@@ -11,6 +11,7 @@ https://docs.arduino.cc/software/ide/
   - GFX Library for Arduino
   - SensorLib (required for standalone versions, used to access IMU data)
   - MavLink (required for MAVLink/INAV versions, used to read telemetry data from FC)
+- Enable PSRAM (Tools > PSRAM > OPI PSRAM)
 - Select the COM port which appears after connecting the device to USB (Tools > Port)
 
 **Editing and flashing code**
