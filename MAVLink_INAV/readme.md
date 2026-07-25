@@ -20,4 +20,9 @@ The following screenshot shows MAVLink telemetry correctly set up on UART8:
 
 The standard MAVLink telemetry settings in INAV may not provide certain fields frequently enough.  Enter the following into CLI:
 
-
+set mavlink_extra1_rate = 30
+set mavlink_rc_chan_rate = 30
+set mavlink_ext_status_rate = 2
+set mavlink_pos_rate = 5
+set mavlink_extra2_rate = 5
+save
