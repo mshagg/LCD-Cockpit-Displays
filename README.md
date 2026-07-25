@@ -4,7 +4,7 @@
 
 This project uses inexpensive ESP32 microprocessors and small LCD displays to render real time information for use in FPV cockpits.
 
-Currently the main processor being used is the Waveshare ESP32 S3 with 1.69 LCD attached.  Standalone ESP32 versions will be developed for use with a variety of displays.
+Currently the main processor being used is the Waveshare ESP32 S3 with 1.69 LCD attached.  Support will be extended to basic ESP32S3 boards and a variety of screen types.
 
 Standalone versions provide basic artificial horizon (AHI) functionality.  MAVLink versions connect to an appropriately configured UART on your flight controller to derive real time telemetry data.
 
