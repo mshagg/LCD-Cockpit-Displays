@@ -12,10 +12,6 @@
 //   2 - Classic airspeed + altimeter
 //   4 - Tron full-screen AHI
 //
-// Removed:
-//   screen_glass_ahi.ino
-//   screen_tron_ahi.ino
-//
 // Task split:
 //   Task1 = primary display + MAVLink + buttons/page select
 //   Task2 = secondary display only
@@ -143,8 +139,6 @@ const char *PREF_AHI_SCREEN = "ahi";
 // Primary screen selection
 // ----------------------------------------------------
 //
-// Old removed IDs:
-//   3 = old tron AHI
 
 enum AhiScreen : uint8_t {
   SCREEN_FULL_AHI = 0,
