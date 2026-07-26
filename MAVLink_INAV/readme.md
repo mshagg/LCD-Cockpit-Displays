@@ -48,4 +48,4 @@ The code is highly configurable through the config.ino tab.  This includes:
 - Defining RC channels for gear and flaps
 - Stall/never exceed speeds for airspeed gauges
 
- MORE DETRAILED DOCUMENTATION FOR CUSTOMISATION ON THE WAY
+ MORE DETAILED DOCUMENTATION FOR CUSTOMISATION ON THE WAY
