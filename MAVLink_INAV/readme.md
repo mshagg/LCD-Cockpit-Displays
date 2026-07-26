@@ -14,6 +14,8 @@ https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69 (non-touch)
 
 https://www.waveshare.com/wiki/1.69inch_LCD_Module
 
+Note: 3D models of the displays are available on the wiki, which makes it super easy to design your cockpit in Fusion360.
+
 **INAV configuration**
 
 The flight controller needs to send MAVLink telemetry to the ESP32.  In order to do so you will require one free UART.  The ESP32 will connect to the Tx pin of this UART.
