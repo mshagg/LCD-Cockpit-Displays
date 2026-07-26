@@ -1,3 +1,7 @@
+**Use**
+
+Default channel assignment for changing screens is Ch15 (for main ESP32 screen) and Ch 16 (for secondary display).  Assign these to momentary switches.  RC channels can be changed in the config.ino file.
+
 **Wiring**
 
 Wire the ESP32 1.69" LCD unit to the other 1.69 LCD and the flight controller as follows:
