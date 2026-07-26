@@ -24,7 +24,7 @@ The following screenshot shows MAVLink telemetry correctly set up on UART8:
 
 <img width="1499" height="301" alt="Screenshot 2026-07-25 212807" src="https://github.com/user-attachments/assets/43994404-f2cc-492b-9541-16b6ecfb983a" />
 
-The standard MAVLink telemetry settings in INAV may not provide certain fields frequently enough.  Enter the following into CLI:
+The standard MAVLink telemetry settings in INAV may not send required data fields frequently enough for smooth drawing of the display.  Enter the following into CLI:
 
 set mavlink_extra1_rate = 30
 
