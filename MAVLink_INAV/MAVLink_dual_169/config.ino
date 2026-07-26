@@ -84,7 +84,7 @@ const bool CONFIG_SECONDARY_PAGE_NAVIGATION_ENABLED    = true;
 const bool CONFIG_SECONDARY_PAGE_BATTERY_ENABLED       = true;
 const bool CONFIG_SECONDARY_PAGE_GEAR_FLAPS_ENABLED    = true;
 const bool CONFIG_SECONDARY_PAGE_PREFLIGHT_ENABLED     = true;
-const bool CONFIG_SECONDARY_PAGE_DIAGNOSTICS_ENABLED   = true;
+const bool CONFIG_SECONDARY_PAGE_DIAGNOSTICS_ENABLED   = false;
 const bool CONFIG_SECONDARY_PAGE_BATTERY_GRAPHICAL_ENABLED = true;
 
 // ----------------------------------------------------
