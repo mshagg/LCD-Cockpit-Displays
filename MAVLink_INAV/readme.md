@@ -2,6 +2,8 @@
 
 Refer to how to flash for Arduino IDE setup.
 
+https://github.com/mshagg/LCD-Cockpit-Displays/blob/main/How%20to%20flash.md
+
 **Hardware**
 
 Note: wiring diagrams in each version's subfolder
