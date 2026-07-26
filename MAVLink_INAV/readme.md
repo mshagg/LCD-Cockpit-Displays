@@ -1,6 +1,6 @@
 **MAVLink/INAV Versions**
 
-Refer to how to flash for Arduino IDE setup.
+Refer to how to flash for Arduino IDE configuration:
 
 https://github.com/mshagg/LCD-Cockpit-Displays/blob/main/How%20to%20flash.md
 
