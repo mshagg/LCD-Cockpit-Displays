@@ -122,9 +122,9 @@ const uint16_t CONFIG_GEAR_FLAPS_RC_VALID_HIGH_US = 2200;
 const uint16_t CONFIG_GEAR_RETRACTED_US = 1000;
 const uint16_t CONFIG_GEAR_EXTENDED_US = 2000;
 
-const uint16_t CONFIG_FLAPS_UP_US = 1111;
-const uint16_t CONFIG_FLAPS_HALF_US = 1352;
-const uint16_t CONFIG_FLAPS_FULL_US = 1536;
+const uint16_t CONFIG_FLAPS_UP_US = 1000;
+const uint16_t CONFIG_FLAPS_HALF_US = 1500;
+const uint16_t CONFIG_FLAPS_FULL_US = 2000;
 
 // ----------------------------------------------------
 // Battery / RSSI
@@ -176,6 +176,6 @@ const int CONFIG_GLASS_HEADING_MINOR_STEP_DEG = 5;
 // ----------------------------------------------------
 
 const float CONFIG_CLASSIC_ASI_MAX_SPEED = 140.0f;
-const float CONFIG_CLASSIC_ASI_STALL_SPEED = 25.0f;
+const float CONFIG_CLASSIC_ASI_STALL_SPEED = 35.0f;
 const float CONFIG_CLASSIC_ASI_OPERATING_MAX_SPEED = 95.0f;
-const float CONFIG_CLASSIC_ASI_NEVER_EXCEED_SPEED = 120.0f;
+const float CONFIG_CLASSIC_ASI_NEVER_EXCEED_SPEED = 150.0f;
