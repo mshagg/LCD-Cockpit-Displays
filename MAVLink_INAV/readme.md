@@ -20,7 +20,7 @@ Note: 3D models of the displays are available on the wiki, which makes it super 
 
 The flight controller needs to send MAVLink telemetry to the ESP32.  In order to do so you will require one free UART.  The ESP32 will connect to the Tx pin of this UART.
 
-It is important that the FC Baud rate matches what the ESP32 is expecting.
+It is important that the FC Baud rate matches what the code is expecting.
 
 The following screenshot shows MAVLink telemetry correctly set up on UART8:
 
