@@ -6,6 +6,8 @@ Default channel assignment for changing screens is Ch16.  Assign this to a momen
 
 Wire the ESP32 to the 2.0inch LCD and the flight controller as follows:
 
+NOTE: Not all LCDs will have a backlight pin, and honestly, it's easier to wire if they dont.
+
 <img width="1224" height="1285" alt="4e2342ba-3757-4596-b1bc-1ae189cf42fb" src="https://github.com/user-attachments/assets/dbef3662-2fa9-4f11-9333-d080bcd93a5a" />
 
 
