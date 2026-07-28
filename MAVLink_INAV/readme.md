@@ -14,6 +14,12 @@ https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69 (non-touch)
 
 https://www.waveshare.com/wiki/1.69inch_LCD_Module
 
+_Single 2":_
+
+<img width="452" height="433" alt="Screenshot 2026-07-28 110750" src="https://github.com/user-attachments/assets/fb990a3c-a1ce-47a2-8ca1-a72ba40f56e5" />
+
++ suitable ESP32S3 development board
+
 Note: 3D models of the displays are available on the wiki, which makes it super easy to design your cockpit in Fusion360.
 
 **INAV configuration**
