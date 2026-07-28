@@ -12,6 +12,10 @@
 //   2 - Classic airspeed + altimeter
 //   4 - Tron full-screen AHI
 //
+// Removed:
+//   screen_glass_ahi.ino
+//   screen_tron_ahi.ino
+//
 // Task split:
 //   Task1 = primary display + MAVLink + buttons/page select
 //   Task2 = secondary display only
@@ -20,6 +24,10 @@
 #include <Arduino.h>
 #include <Arduino_GFX_Library.h>
 #include <Preferences.h>
+#include "fast_trig.h"
+
+extern const unsigned long CONFIG_PRIMARY_DISPLAY_UPDATE_MS;
+extern const uint32_t CONFIG_PRIMARY_LCD_SPI_HZ;
 
 // ----------------------------------------------------
 // Arduino_GFX compatibility helpers
@@ -67,8 +75,13 @@ static inline uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b)
 #define SECONDARY_TASK_PRIORITY  1
 #define SECONDARY_TASK_STACK     8000
 
+#define TELEMETRY_TASK_CORE      0
+#define TELEMETRY_TASK_PRIORITY  2
+#define TELEMETRY_TASK_STACK     8000
+
 TaskHandle_t Task1;
 TaskHandle_t Task2;
+TaskHandle_t TelemetryTask;
 
 // ----------------------------------------------------
 // Display objects
@@ -139,6 +152,8 @@ const char *PREF_AHI_SCREEN = "ahi";
 // Primary screen selection
 // ----------------------------------------------------
 //
+// Old removed IDs:
+//   3 = old tron AHI
 
 enum AhiScreen : uint8_t {
   SCREEN_FULL_AHI = 0,
@@ -171,6 +186,8 @@ void updateDisplayStats(
 
 void Task1code(void *pvParameters);
 void Task2code(void *pvParameters);
+void TelemetryTaskCode(void *pvParameters);
+void serviceSmoothedAttitude();
 
 // ----------------------------------------------------
 // Other-tab function declarations
@@ -250,6 +267,16 @@ void setup()
     &Task2,
     SECONDARY_TASK_CORE
   );
+
+  xTaskCreatePinnedToCore(
+    TelemetryTaskCode,
+    "Telemetry",
+    TELEMETRY_TASK_STACK,
+    NULL,
+    TELEMETRY_TASK_PRIORITY,
+    &TelemetryTask,
+    TELEMETRY_TASK_CORE
+  );
 }
 
 // ----------------------------------------------------
@@ -270,8 +297,8 @@ void setupPrimaryDisplay()
   pinMode(LCD_BL, OUTPUT);
   digitalWrite(LCD_BL, HIGH);
 
-  gfx->begin();
-  canvas->begin();
+  gfx->begin(CONFIG_PRIMARY_LCD_SPI_HZ);
+  canvas->begin(GFX_SKIP_OUTPUT_BEGIN);
 
   canvas->fillScreen(GFX_BLACK);
   canvas->flush();
@@ -402,16 +429,20 @@ void drawCurrentScreen()
 
 void Task1code(void *pvParameters)
 {
+  (void)pvParameters;
+
+  TickType_t lastWakeTime = xTaskGetTickCount();
+  const TickType_t updateIntervalTicks =
+    pdMS_TO_TICKS(CONFIG_PRIMARY_DISPLAY_UPDATE_MS);
+
   for (;;) {
     uint32_t frameStartUs = micros();
 
     updateButtons();
+    serviceSmoothedAttitude();
 
-    uint32_t mavlinkStartUs = micros();
-    get_mavlink_data();
-    uint32_t mavlinkEndUs = micros();
-
-    updatePageSelect();
+    uint32_t mavlinkStartUs = frameStartUs;
+    uint32_t mavlinkEndUs = frameStartUs;
 
     uint32_t drawStartUs = micros();
     drawCurrentScreen();
@@ -430,6 +461,21 @@ void Task1code(void *pvParameters)
       frameEndUs
     );
 
+    vTaskDelayUntil(&lastWakeTime, updateIntervalTicks);
+  }
+}
+
+// ----------------------------------------------------
+// Telemetry and RC page-selection task
+// ----------------------------------------------------
+
+void TelemetryTaskCode(void *pvParameters)
+{
+  (void)pvParameters;
+
+  for (;;) {
+    get_mavlink_data();
+    updatePageSelect();
     vTaskDelay(1);
   }
 }

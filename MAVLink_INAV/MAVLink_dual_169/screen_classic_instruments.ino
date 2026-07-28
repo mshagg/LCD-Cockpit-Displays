@@ -129,10 +129,12 @@ static void instPolarPoint(
   int &x,
   int &y
 ) {
-  float a = angleDeg * DEG_TO_RAD;
+  float s;
+  float c;
+  fastSinCosDeg(angleDeg, &s, &c);
 
-  x = cx + (int)lroundf(sinf(a) * radius);
-  y = cy - (int)lroundf(cosf(a) * radius);
+  x = cx + (int)lroundf(s * radius);
+  y = cy - (int)lroundf(c * radius);
 }
 
 static float instAirspeedToAngle(float speed)

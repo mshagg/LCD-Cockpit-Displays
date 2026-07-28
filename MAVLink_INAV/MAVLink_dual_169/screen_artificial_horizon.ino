@@ -91,8 +91,9 @@ static void pfdTransformPoint(
   int &x,
   int &y
 ) {
-  float c = cosf(rollRad);
-  float s = sinf(rollRad);
+  float s;
+  float c;
+  fastSinCosRad(rollRad, &s, &c);
 
   x = (int)lroundf(cx + xr * c - yr * s);
   y = (int)lroundf(cy + xr * s + yr * c);
@@ -114,8 +115,9 @@ static void drawPfdSkyGround(
   uint16_t skyColor,
   uint16_t groundColor
 ) {
-  float s = sinf(rollRad);
-  float c = cosf(rollRad);
+  float s;
+  float c;
+  fastSinCosRad(rollRad, &s, &c);
 
   for (int y = yMin; y <= yMax; y++) {
     float dy = (float)y - horizonCy;

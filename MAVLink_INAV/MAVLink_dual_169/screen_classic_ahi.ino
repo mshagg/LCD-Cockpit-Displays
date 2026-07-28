@@ -105,8 +105,9 @@ static void classicDrawRotatedLine(
   float y2,
   uint16_t colour
 ) {
-  float s = sinf(rollRad);
-  float c = cosf(rollRad);
+  float s;
+  float c;
+  fastSinCosRad(rollRad, &s, &c);
 
   int sx1 = cx + (int)lroundf((x1 * c) - (y1 * s));
   int sy1 = cy + (int)lroundf((x1 * s) + (y1 * c));
@@ -127,10 +128,12 @@ static void classicDrawRotatedText(
   int textSize,
   uint16_t colour
 ) {
-  float a = cardAngleDeg * DEG_TO_RAD;
+  float s;
+  float c;
+  fastSinCosDeg(cardAngleDeg, &s, &c);
 
-  int x = cx + (int)lroundf(sinf(a) * radius);
-  int y = cy - (int)lroundf(cosf(a) * radius);
+  int x = cx + (int)lroundf(s * radius);
+  int y = cy - (int)lroundf(c * radius);
 
   int textW = classicTextWidth(text, textSize);
   int textH = 8 * textSize;
@@ -214,8 +217,9 @@ static void classicDrawAhiBackground(
   float rollRad,
   float pitchRad
 ) {
-  float s = sinf(rollRad);
-  float c = cosf(rollRad);
+  float s;
+  float c;
+  fastSinCosRad(rollRad, &s, &c);
 
   float pitchDeg = pitchRad * RAD_TO_DEG;
   float pitchOffset = pitchDeg * 2.4f;

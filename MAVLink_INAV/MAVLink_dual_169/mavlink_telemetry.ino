@@ -19,6 +19,8 @@ extern float roll;
 extern float pitch;
 extern float yaw;
 
+extern const float CONFIG_MAVLINK_ROLL_SIGN;
+
 // ----------------------------------------------------
 // MAVLink parser
 // ----------------------------------------------------
@@ -39,9 +41,9 @@ float rawYaw = 0.0f;
 bool attitudeSmoothingInitialised = false;
 unsigned long lastAttitudeSmoothingUs = 0;
 
-const float MAVLINK_ROLL_SMOOTHING_SECONDS  = 0.10f;
-const float MAVLINK_PITCH_SMOOTHING_SECONDS = 0.12f;
-const float MAVLINK_YAW_SMOOTHING_SECONDS   = 0.15f;
+const float MAVLINK_ROLL_SMOOTHING_SECONDS  = 0.03f;
+const float MAVLINK_PITCH_SMOOTHING_SECONDS = 0.03f;
+const float MAVLINK_YAW_SMOOTHING_SECONDS   = 0.06f;
 
 // ----------------------------------------------------
 // Flight data
@@ -249,7 +251,7 @@ void updateFlightTimerFromArmState(bool armedNow);
 void serviceFlightTimer();
 void resetFlightTimer();
 
-void updateSmoothedAttitude(float targetRoll, float targetPitch, float targetYaw);
+void serviceSmoothedAttitude();
 float smoothLinearValue(float currentValue, float targetValue, float alpha);
 float smoothAngleRadians(float currentAngle, float targetAngle, float alpha);
 float wrapAnglePi(float angleRad);
@@ -513,7 +515,7 @@ void decodeMavlinkAttitude()
   mavlink_attitude_t attitude;
   mavlink_msg_attitude_decode(&msg, &attitude);
 
-  rawRoll = -attitude.roll;
+  rawRoll = attitude.roll * CONFIG_MAVLINK_ROLL_SIGN;
 
   rawPitch =
     attitude.pitch +
@@ -521,7 +523,15 @@ void decodeMavlinkAttitude()
 
   rawYaw = attitude.yaw;
 
-  updateSmoothedAttitude(rawRoll, rawPitch, rawYaw);
+  // Packet reception updates targets. The display task advances the
+  // visible values at its own cadence, avoiding packet-rate stepping.
+  if (!attitudeSmoothingInitialised) {
+    roll = rawRoll;
+    pitch = rawPitch;
+    yaw = rawYaw;
+    attitudeSmoothingInitialised = true;
+    lastAttitudeSmoothingUs = micros();
+  }
 
   lastMavlinkAttitudeMs = millis();
   mavlinkAttitudeValid = true;
@@ -993,22 +1003,13 @@ void resetFlightTimer()
 // Attitude smoothing
 // ----------------------------------------------------
 
-void updateSmoothedAttitude(
-  float targetRoll,
-  float targetPitch,
-  float targetYaw
-) {
-  unsigned long nowUs = micros();
-
+void serviceSmoothedAttitude()
+{
   if (!attitudeSmoothingInitialised) {
-    roll = targetRoll;
-    pitch = targetPitch;
-    yaw = targetYaw;
-
-    attitudeSmoothingInitialised = true;
-    lastAttitudeSmoothingUs = nowUs;
     return;
   }
+
+  unsigned long nowUs = micros();
 
   float dt =
     (float)(nowUs - lastAttitudeSmoothingUs) / 1000000.0f;
@@ -1016,9 +1017,9 @@ void updateSmoothedAttitude(
   lastAttitudeSmoothingUs = nowUs;
 
   if (dt <= 0.0f || dt > 0.5f) {
-    roll = targetRoll;
-    pitch = targetPitch;
-    yaw = targetYaw;
+    roll = rawRoll;
+    pitch = rawPitch;
+    yaw = rawYaw;
     return;
   }
 
@@ -1031,9 +1032,9 @@ void updateSmoothedAttitude(
   float yawAlpha =
     1.0f - expf(-dt / MAVLINK_YAW_SMOOTHING_SECONDS);
 
-  roll = smoothAngleRadians(roll, targetRoll, rollAlpha);
-  pitch = smoothLinearValue(pitch, targetPitch, pitchAlpha);
-  yaw = smoothAngleRadians(yaw, targetYaw, yawAlpha);
+  roll = smoothAngleRadians(roll, rawRoll, rollAlpha);
+  pitch = smoothLinearValue(pitch, rawPitch, pitchAlpha);
+  yaw = smoothAngleRadians(yaw, rawYaw, yawAlpha);
 }
 
 float smoothLinearValue(

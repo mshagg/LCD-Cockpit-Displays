@@ -6,6 +6,16 @@ const float CONFIG_AHI_PITCH_OFFSET_DEG = 0.0f;
 
 const float CONFIG_AHI_ROLL_POINTER_SIGN = 1.0f;
 
+// Primary full-frame display cadence and SPI clock. 80 MHz is the
+// optimized setting used by the 2-inch build; reduce to 40000000UL if
+// the 1.69-inch panel or wiring shows corruption.
+const unsigned long CONFIG_PRIMARY_DISPLAY_UPDATE_MS = 16;
+const uint32_t CONFIG_PRIMARY_LCD_SPI_HZ = 80000000UL;
+
+// MAVLink attitude convention. Use -1.0f only when the airframe roll
+// direction needs reversing at the telemetry source.
+const float CONFIG_MAVLINK_ROLL_SIGN = -1.0f;
+
 // ----------------------------------------------------
 // CH15 main page select
 // ----------------------------------------------------
@@ -84,7 +94,7 @@ const bool CONFIG_SECONDARY_PAGE_NAVIGATION_ENABLED    = true;
 const bool CONFIG_SECONDARY_PAGE_BATTERY_ENABLED       = true;
 const bool CONFIG_SECONDARY_PAGE_GEAR_FLAPS_ENABLED    = true;
 const bool CONFIG_SECONDARY_PAGE_PREFLIGHT_ENABLED     = true;
-const bool CONFIG_SECONDARY_PAGE_DIAGNOSTICS_ENABLED   = false;
+const bool CONFIG_SECONDARY_PAGE_DIAGNOSTICS_ENABLED   = true;
 const bool CONFIG_SECONDARY_PAGE_BATTERY_GRAPHICAL_ENABLED = true;
 
 // ----------------------------------------------------
@@ -122,9 +132,9 @@ const uint16_t CONFIG_GEAR_FLAPS_RC_VALID_HIGH_US = 2200;
 const uint16_t CONFIG_GEAR_RETRACTED_US = 1000;
 const uint16_t CONFIG_GEAR_EXTENDED_US = 2000;
 
-const uint16_t CONFIG_FLAPS_UP_US = 1000;
-const uint16_t CONFIG_FLAPS_HALF_US = 1500;
-const uint16_t CONFIG_FLAPS_FULL_US = 2000;
+const uint16_t CONFIG_FLAPS_UP_US = 1111;
+const uint16_t CONFIG_FLAPS_HALF_US = 1352;
+const uint16_t CONFIG_FLAPS_FULL_US = 1536;
 
 // ----------------------------------------------------
 // Battery / RSSI
@@ -176,6 +186,6 @@ const int CONFIG_GLASS_HEADING_MINOR_STEP_DEG = 5;
 // ----------------------------------------------------
 
 const float CONFIG_CLASSIC_ASI_MAX_SPEED = 140.0f;
-const float CONFIG_CLASSIC_ASI_STALL_SPEED = 35.0f;
+const float CONFIG_CLASSIC_ASI_STALL_SPEED = 25.0f;
 const float CONFIG_CLASSIC_ASI_OPERATING_MAX_SPEED = 95.0f;
-const float CONFIG_CLASSIC_ASI_NEVER_EXCEED_SPEED = 150.0f;
+const float CONFIG_CLASSIC_ASI_NEVER_EXCEED_SPEED = 120.0f;

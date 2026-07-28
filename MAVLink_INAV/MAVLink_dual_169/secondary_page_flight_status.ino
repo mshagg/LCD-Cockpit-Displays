@@ -2,19 +2,16 @@
 // Secondary page: flight status
 // ----------------------------------------------------
 //
-// Layout:
-//   - No header
-//   - Large flight mode field at top
-//   - Flight fields split into two large-text columns
-//   - No RC15/16 row
-//
-// Static layout is drawn only when secondaryNeedsFullRedraw is true.
-// Dynamic fields are updated in-place.
+// Styled to match the other secondary pages:
+//   - dark background
+//   - dark-blue panels
+//   - light grey borders
+//   - cyan labels
+//   - green / yellow / red status colours
 // ----------------------------------------------------
 
 #include <Arduino.h>
 #include <Arduino_GFX_Library.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -22,471 +19,366 @@
 extern Arduino_GFX *secGfx;
 extern bool secondaryNeedsFullRedraw;
 
-// MAVLink flight data
-extern bool mavlinkHeartbeatValid;
-extern bool mavlinkVfrHudValid;
-extern bool mavlinkBatteryValid;
-extern bool mavlinkGpsValid;
-
-extern bool vehicleArmed;
+// MAVLink telemetry
 extern char flightModeText[18];
+extern bool vehicleArmed;
+extern bool mavlinkHeartbeatValid;
 
 extern float airspeed;
 extern float groundspeed;
 extern float altitude_msl;
-
-extern float batteryVoltage;
-extern float batteryCellVoltage;
-extern float batteryCurrentA;
-extern int8_t batteryRemainingPercent;
+extern float climb_rate;
+extern int16_t heading_deg;
+extern bool mavlinkVfrHudValid;
 
 extern uint8_t gpsFixType;
 extern uint8_t gpsSatellitesVisible;
+extern bool mavlinkGpsValid;
 
-extern bool rssiValid;
 extern uint8_t rssiPercent;
+extern bool rssiValid;
+
+extern float batteryCellVoltage;
+extern float batteryLowestCellVoltage;
+extern bool batteryLowestCellVoltageValid;
+extern bool mavlinkBatteryValid;
 
 // ----------------------------------------------------
 // Colours
 // ----------------------------------------------------
 
-static const uint16_t SEC_FLIGHT_BLACK  = RGB565(0, 0, 0);
-static const uint16_t SEC_FLIGHT_PANEL  = RGB565(5, 12, 18);
-static const uint16_t SEC_FLIGHT_PANEL2 = RGB565(8, 18, 28);
-static const uint16_t SEC_FLIGHT_LINE   = RGB565(40, 95, 120);
-static const uint16_t SEC_FLIGHT_DIM    = RGB565(135, 150, 155);
-static const uint16_t SEC_FLIGHT_GOOD   = RGB565(80, 255, 120);
-static const uint16_t SEC_FLIGHT_WARN   = RGB565(255, 175, 40);
-static const uint16_t SEC_FLIGHT_BAD    = RGB565(255, 65, 65);
-static const uint16_t SEC_FLIGHT_PURPLE = RGB565(190, 70, 255);
+static const uint16_t FS_BG         = RGB565(3, 8, 14);
+static const uint16_t FS_PANEL      = RGB565(6, 18, 30);
+static const uint16_t FS_PANEL_DARK = RGB565(2, 10, 18);
+
+static const uint16_t FS_LINE       = RGB565(210, 210, 210);
+static const uint16_t FS_LINE_SOFT  = RGB565(95, 95, 95);
+
+static const uint16_t FS_LABEL      = RGB565(0, 210, 255);
+static const uint16_t FS_VALUE      = RGB565(245, 245, 245);
+
+static const uint16_t FS_GREEN      = RGB565(0, 230, 90);
+static const uint16_t FS_WARN       = RGB565(255, 190, 0);
+static const uint16_t FS_BAD        = RGB565(255, 60, 50);
 
 // ----------------------------------------------------
 // Layout
 // ----------------------------------------------------
 
-static const int SEC_FLIGHT_W = 240;
+static const int FS_TITLE_X = 6;
+static const int FS_TITLE_Y = 4;
+static const int FS_TITLE_W = 228;
+static const int FS_TITLE_H = 28;
 
-static const int SEC_FLIGHT_MODE_X = 0;
-static const int SEC_FLIGHT_MODE_Y = 0;
-static const int SEC_FLIGHT_MODE_W = 240;
-static const int SEC_FLIGHT_MODE_H = 80;
+static const int FS_MODE_X = 6;
+static const int FS_MODE_Y = 38;
+static const int FS_MODE_W = 228;
+static const int FS_MODE_H = 52;
 
-static const int SEC_FLIGHT_LEFT_X  = 0;
-static const int SEC_FLIGHT_RIGHT_X = 122;
-static const int SEC_FLIGHT_COL_W   = 118;
-static const int SEC_FLIGHT_TILE_H  = 46;
+static const int FS_LEFT_X = 6;
+static const int FS_RIGHT_X = 122;
 
-static const int SEC_FLIGHT_ROW1_Y = 85;
-static const int SEC_FLIGHT_ROW2_Y = 134;
-static const int SEC_FLIGHT_ROW3_Y = 183;
-static const int SEC_FLIGHT_ROW4_Y = 232;
+static const int FS_TILE_W = 112;
+static const int FS_TILE_H = 42;
+
+static const int FS_ROW1_Y = 98;
+static const int FS_ROW2_Y = 146;
+static const int FS_ROW3_Y = 194;
+static const int FS_ROW4_Y = 238;
 
 // ----------------------------------------------------
 // Helpers
 // ----------------------------------------------------
 
-static int secFlightTextWidth(const char *text, int textSize)
+static void fsDrawTileFrame(int x, int y, int w, int h, const char *label)
 {
-  if (text == nullptr) {
-    return 0;
-  }
+  secGfx->fillRoundRect(x, y, w, h, 4, FS_PANEL);
+  secGfx->drawRoundRect(x, y, w, h, 4, FS_LINE);
+  secGfx->drawLine(x + 1, y + 18, x + w - 2, y + 18, FS_LINE_SOFT);
 
-  return (int)strlen(text) * 6 * textSize;
+  secGfx->setTextSize(1);
+  secGfx->setTextColor(FS_LABEL, FS_PANEL);
+  secGfx->setCursor(x + 6, y + 6);
+  secGfx->print(label);
 }
 
-static void secFlightPrintCentered(
+static void fsPrintCentered(
   int x,
   int y,
   int w,
   const char *text,
-  int textSize,
-  uint16_t color
+  uint8_t textSize,
+  uint16_t colour,
+  uint16_t bg
 ) {
-  int textW = secFlightTextWidth(text, textSize);
-  int textX = x + ((w - textW) / 2);
-
-  if (textX < x + 2) {
-    textX = x + 2;
-  }
+  int16_t x1;
+  int16_t y1;
+  uint16_t textW;
+  uint16_t textH;
 
   secGfx->setTextSize(textSize);
-  secGfx->setTextColor(color);
-  secGfx->setCursor(textX, y);
+  secGfx->getTextBounds(text, 0, 0, &x1, &y1, &textW, &textH);
+
+  int drawX = x + ((w - (int)textW) / 2);
+
+  if (drawX < x + 2) {
+    drawX = x + 2;
+  }
+
+  secGfx->setTextColor(colour, bg);
+  secGfx->setCursor(drawX, y);
   secGfx->print(text);
 }
 
-static int secFlightModeTextSize(const char *text)
-{
-  int len = strlen(text);
-
-  if (len <= 4) {
-    return 6;
-  }
-
-  if (len <= 6) {
-    return 5;
-  }
-
-  if (len <= 9) {
-    return 4;
-  }
-
-  return 3;
+static void fsPrintTileValue(
+  int x,
+  int y,
+  int w,
+  int h,
+  const char *value,
+  uint16_t colour
+) {
+  secGfx->fillRect(x + 3, y + 20, w - 6, h - 23, FS_PANEL);
+  fsPrintCentered(x, y + 24, w, value, 2, colour, FS_PANEL);
 }
 
-static const char* secFlightGpsFixText(uint8_t fixType)
+static void fsDrawStaticLayout()
 {
-  switch (fixType) {
-    case 0:
-      return "NO";
+  secGfx->fillScreen(FS_BG);
 
-    case 1:
-      return "NOFIX";
+  secGfx->fillRoundRect(
+    FS_TITLE_X,
+    FS_TITLE_Y,
+    FS_TITLE_W,
+    FS_TITLE_H,
+    4,
+    FS_PANEL_DARK
+  );
 
-    case 2:
-      return "2D";
+  secGfx->drawRoundRect(
+    FS_TITLE_X,
+    FS_TITLE_Y,
+    FS_TITLE_W,
+    FS_TITLE_H,
+    4,
+    FS_LINE
+  );
 
-    case 3:
-      return "3D";
+  secGfx->setTextSize(2);
+  secGfx->setTextColor(FS_LABEL, FS_PANEL_DARK);
+  secGfx->setCursor(14, 10);
+  secGfx->print("FLIGHT STATUS");
 
-    case 4:
-      return "DGPS";
+  fsDrawTileFrame(FS_MODE_X, FS_MODE_Y, FS_MODE_W, FS_MODE_H, "MODE / ARM");
 
-    case 5:
-      return "RTKF";
+  fsDrawTileFrame(FS_LEFT_X,  FS_ROW1_Y, FS_TILE_W, FS_TILE_H, "AIRSPEED");
+  fsDrawTileFrame(FS_RIGHT_X, FS_ROW1_Y, FS_TILE_W, FS_TILE_H, "GND SPD");
 
-    case 6:
-      return "RTK";
+  fsDrawTileFrame(FS_LEFT_X,  FS_ROW2_Y, FS_TILE_W, FS_TILE_H, "ALTITUDE");
+  fsDrawTileFrame(FS_RIGHT_X, FS_ROW2_Y, FS_TILE_W, FS_TILE_H, "VERT SPD");
 
-    default:
-      return "FIX";
-  }
+  fsDrawTileFrame(FS_LEFT_X,  FS_ROW3_Y, FS_TILE_W, FS_TILE_H, "HEADING");
+  fsDrawTileFrame(FS_RIGHT_X, FS_ROW3_Y, FS_TILE_W, FS_TILE_H, "GPS");
+
+  fsDrawTileFrame(FS_LEFT_X,  FS_ROW4_Y, FS_TILE_W, FS_TILE_H, "RSSI");
+  fsDrawTileFrame(FS_RIGHT_X, FS_ROW4_Y, FS_TILE_W, FS_TILE_H, "CELL V");
 }
 
-static uint16_t secFlightGpsColor()
+static uint16_t fsHeartbeatColour()
+{
+  if (!mavlinkHeartbeatValid) {
+    return FS_BAD;
+  }
+
+  if (vehicleArmed) {
+    return FS_GREEN;
+  }
+
+  return FS_WARN;
+}
+
+static uint16_t fsGpsColour()
 {
   if (!mavlinkGpsValid) {
-    return SEC_FLIGHT_BAD;
+    return FS_BAD;
   }
 
-  if (gpsFixType >= 3) {
-    return SEC_FLIGHT_GOOD;
+  if (gpsFixType >= 3 && gpsSatellitesVisible >= 6) {
+    return FS_GREEN;
   }
 
-  if (gpsFixType == 2) {
-    return SEC_FLIGHT_WARN;
+  if (gpsFixType >= 2) {
+    return FS_WARN;
   }
 
-  return SEC_FLIGHT_BAD;
+  return FS_BAD;
 }
 
-static uint16_t secFlightBatteryColor()
-{
-  if (!mavlinkBatteryValid) {
-    return SEC_FLIGHT_BAD;
-  }
-
-  if (batteryCellVoltage <= CONFIG_BATTERY_CELL_CRITICAL_V) {
-    return SEC_FLIGHT_BAD;
-  }
-
-  if (batteryCellVoltage <= CONFIG_BATTERY_CELL_WARN_V) {
-    return SEC_FLIGHT_WARN;
-  }
-
-  return SEC_FLIGHT_GOOD;
-}
-
-static uint16_t secFlightRssiColor()
+static uint16_t fsRssiColour()
 {
   if (!rssiValid) {
-    return SEC_FLIGHT_BAD;
+    return FS_BAD;
   }
 
-  if (rssiPercent < 30) {
-    return SEC_FLIGHT_BAD;
+  if (rssiPercent < 35) {
+    return FS_BAD;
   }
 
-  if (rssiPercent < 55) {
-    return SEC_FLIGHT_WARN;
+  if (rssiPercent < 60) {
+    return FS_WARN;
   }
 
-  return SEC_FLIGHT_GOOD;
+  return FS_GREEN;
 }
 
-static uint16_t secFlightValidColor(bool valid)
+static uint16_t fsCellColour(float cellV)
 {
-  return valid ? SEC_FLIGHT_GOOD : SEC_FLIGHT_BAD;
-}
+  if (!mavlinkBatteryValid || cellV <= 0.0f) {
+    return FS_BAD;
+  }
 
-static void secFlightDrawTileFrame(
-  int x,
-  int y,
-  const char *label
-) {
-  secGfx->fillRect(
-    x,
-    y,
-    SEC_FLIGHT_COL_W,
-    SEC_FLIGHT_TILE_H,
-    SEC_FLIGHT_PANEL
-  );
+  if (cellV < 3.40f) {
+    return FS_BAD;
+  }
 
-  secGfx->drawRect(
-    x,
-    y,
-    SEC_FLIGHT_COL_W,
-    SEC_FLIGHT_TILE_H,
-    SEC_FLIGHT_LINE
-  );
+  if (cellV < 3.60f) {
+    return FS_WARN;
+  }
 
-  secGfx->setTextSize(1);
-  secGfx->setTextColor(SEC_FLIGHT_DIM);
-  secGfx->setCursor(x + 5, y + 5);
-  secGfx->print(label);
-}
-
-static void secFlightUpdateTileValue(
-  int x,
-  int y,
-  const char *value,
-  uint16_t valueColor
-) {
-  secGfx->fillRect(
-    x + 3,
-    y + 19,
-    SEC_FLIGHT_COL_W - 6,
-    23,
-    SEC_FLIGHT_PANEL
-  );
-
-  secFlightPrintCentered(
-    x,
-    y + 23,
-    SEC_FLIGHT_COL_W,
-    value,
-    2,
-    valueColor
-  );
-}
-
-static void secFlightDrawStaticLayout()
-{
-  secGfx->fillScreen(SEC_FLIGHT_BLACK);
-
-  // Flight mode panel.
-  secGfx->fillRect(
-    SEC_FLIGHT_MODE_X,
-    SEC_FLIGHT_MODE_Y,
-    SEC_FLIGHT_MODE_W,
-    SEC_FLIGHT_MODE_H,
-    SEC_FLIGHT_PANEL2
-  );
-
-  secGfx->drawRect(
-    SEC_FLIGHT_MODE_X,
-    SEC_FLIGHT_MODE_Y,
-    SEC_FLIGHT_MODE_W,
-    SEC_FLIGHT_MODE_H,
-    SEC_FLIGHT_LINE
-  );
-
-  secFlightPrintCentered(
-    SEC_FLIGHT_MODE_X,
-    SEC_FLIGHT_MODE_Y + 7,
-    SEC_FLIGHT_MODE_W,
-    "MODE",
-    1,
-    SEC_FLIGHT_DIM
-  );
-
-  // Two-column tiles.
-  secFlightDrawTileFrame(SEC_FLIGHT_LEFT_X,  SEC_FLIGHT_ROW1_Y, "GPS/SAT");
-  secFlightDrawTileFrame(SEC_FLIGHT_RIGHT_X, SEC_FLIGHT_ROW1_Y, "RSSI");
-
-  secFlightDrawTileFrame(SEC_FLIGHT_LEFT_X,  SEC_FLIGHT_ROW2_Y, "BAT");
-  secFlightDrawTileFrame(SEC_FLIGHT_RIGHT_X, SEC_FLIGHT_ROW2_Y, "CELL");
-
-  secFlightDrawTileFrame(SEC_FLIGHT_LEFT_X,  SEC_FLIGHT_ROW3_Y, "ALT");
-  secFlightDrawTileFrame(SEC_FLIGHT_RIGHT_X, SEC_FLIGHT_ROW3_Y, "AIR");
-
-  secFlightDrawTileFrame(SEC_FLIGHT_LEFT_X,  SEC_FLIGHT_ROW4_Y, "GS");
-  secFlightDrawTileFrame(SEC_FLIGHT_RIGHT_X, SEC_FLIGHT_ROW4_Y, "ARM");
-}
-
-static void secFlightUpdateMode()
-{
-  secGfx->fillRect(
-    SEC_FLIGHT_MODE_X + 4,
-    SEC_FLIGHT_MODE_Y + 20,
-    SEC_FLIGHT_MODE_W - 8,
-    55,
-    SEC_FLIGHT_PANEL2
-  );
-
-  const char *modeText = mavlinkHeartbeatValid ? flightModeText : "NO HB";
-
-  int textSize = secFlightModeTextSize(modeText);
-
-  secFlightPrintCentered(
-    SEC_FLIGHT_MODE_X,
-    SEC_FLIGHT_MODE_Y + 26,
-    SEC_FLIGHT_MODE_W,
-    modeText,
-    textSize,
-    mavlinkHeartbeatValid ? SEC_FLIGHT_PURPLE : SEC_FLIGHT_BAD
-  );
+  return FS_GREEN;
 }
 
 // ----------------------------------------------------
-// Draw page
+// Dynamic drawing
+// ----------------------------------------------------
+
+static void fsUpdateModePanel()
+{
+  secGfx->fillRect(
+    FS_MODE_X + 3,
+    FS_MODE_Y + 20,
+    FS_MODE_W - 6,
+    FS_MODE_H - 23,
+    FS_PANEL
+  );
+
+  const char *modeText = "NO LINK";
+
+  if (mavlinkHeartbeatValid) {
+    modeText = flightModeText;
+  }
+
+  const char *armText = "NO HB";
+
+  if (mavlinkHeartbeatValid) {
+    if (vehicleArmed) {
+      armText = "ARMED";
+    } else {
+      armText = "SAFE";
+    }
+  }
+
+  secGfx->setTextSize(2);
+  secGfx->setTextColor(
+    mavlinkHeartbeatValid ? FS_VALUE : FS_BAD,
+    FS_PANEL
+  );
+  secGfx->setCursor(FS_MODE_X + 10, FS_MODE_Y + 28);
+  secGfx->print(modeText);
+
+  int16_t x1;
+  int16_t y1;
+  uint16_t textW;
+  uint16_t textH;
+
+  secGfx->setTextSize(2);
+  secGfx->getTextBounds(armText, 0, 0, &x1, &y1, &textW, &textH);
+
+  secGfx->setTextColor(fsHeartbeatColour(), FS_PANEL);
+  secGfx->setCursor(FS_MODE_X + FS_MODE_W - 10 - textW, FS_MODE_Y + 28);
+  secGfx->print(armText);
+}
+
+static void fsUpdateFlightTiles()
+{
+  char value[20];
+
+  if (mavlinkVfrHudValid) {
+    snprintf(value, sizeof(value), "%.0f", airspeed * 3.6f);
+    fsPrintTileValue(FS_LEFT_X, FS_ROW1_Y, FS_TILE_W, FS_TILE_H, value, FS_VALUE);
+
+    snprintf(value, sizeof(value), "%.0f", groundspeed * 3.6f);
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW1_Y, FS_TILE_W, FS_TILE_H, value, FS_VALUE);
+
+    snprintf(value, sizeof(value), "%.0f", altitude_msl);
+    fsPrintTileValue(FS_LEFT_X, FS_ROW2_Y, FS_TILE_W, FS_TILE_H, value, FS_VALUE);
+
+    snprintf(value, sizeof(value), "%.1f", climb_rate);
+
+    uint16_t climbColour = FS_VALUE;
+
+    if (climb_rate > 1.0f) {
+      climbColour = FS_GREEN;
+    } else if (climb_rate < -1.0f) {
+      climbColour = FS_WARN;
+    }
+
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW2_Y, FS_TILE_W, FS_TILE_H, value, climbColour);
+
+    snprintf(value, sizeof(value), "%03d", heading_deg);
+    fsPrintTileValue(FS_LEFT_X, FS_ROW3_Y, FS_TILE_W, FS_TILE_H, value, FS_VALUE);
+  } else {
+    fsPrintTileValue(FS_LEFT_X,  FS_ROW1_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW1_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+    fsPrintTileValue(FS_LEFT_X,  FS_ROW2_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW2_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+    fsPrintTileValue(FS_LEFT_X,  FS_ROW3_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+  }
+}
+
+static void fsUpdateSystemTiles()
+{
+  char value[20];
+
+  if (mavlinkGpsValid) {
+    snprintf(value, sizeof(value), "%u/%u", gpsFixType, gpsSatellitesVisible);
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW3_Y, FS_TILE_W, FS_TILE_H, value, fsGpsColour());
+  } else {
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW3_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+  }
+
+  if (rssiValid) {
+    snprintf(value, sizeof(value), "%u%%", rssiPercent);
+    fsPrintTileValue(FS_LEFT_X, FS_ROW4_Y, FS_TILE_W, FS_TILE_H, value, fsRssiColour());
+  } else {
+    fsPrintTileValue(FS_LEFT_X, FS_ROW4_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+  }
+
+  float cellV = batteryCellVoltage;
+
+  if (batteryLowestCellVoltageValid) {
+    cellV = batteryLowestCellVoltage;
+  }
+
+  if (mavlinkBatteryValid && cellV > 0.0f) {
+    snprintf(value, sizeof(value), "%.2f", cellV);
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW4_Y, FS_TILE_W, FS_TILE_H, value, fsCellColour(cellV));
+  } else {
+    fsPrintTileValue(FS_RIGHT_X, FS_ROW4_Y, FS_TILE_W, FS_TILE_H, "---", FS_BAD);
+  }
+}
+
+// ----------------------------------------------------
+// Required page entry point
 // ----------------------------------------------------
 
 void drawSecondaryFlightStatusPage()
 {
-  char value[24];
-
   if (secondaryNeedsFullRedraw) {
-    secFlightDrawStaticLayout();
+    fsDrawStaticLayout();
   }
 
-  secFlightUpdateMode();
-
-  // GPS / SAT.
-  if (mavlinkGpsValid) {
-    snprintf(
-      value,
-      sizeof(value),
-      "%s %u",
-      secFlightGpsFixText(gpsFixType),
-      gpsSatellitesVisible
-    );
-  } else {
-    snprintf(value, sizeof(value), "LOST");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_LEFT_X,
-    SEC_FLIGHT_ROW1_Y,
-    value,
-    secFlightGpsColor()
-  );
-
-  // RSSI.
-  if (rssiValid) {
-    snprintf(value, sizeof(value), "%u%%", rssiPercent);
-  } else {
-    snprintf(value, sizeof(value), "--");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_RIGHT_X,
-    SEC_FLIGHT_ROW1_Y,
-    value,
-    secFlightRssiColor()
-  );
-
-  // Battery voltage.
-  if (mavlinkBatteryValid) {
-    snprintf(value, sizeof(value), "%.1fV", batteryVoltage);
-  } else {
-    snprintf(value, sizeof(value), "LOST");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_LEFT_X,
-    SEC_FLIGHT_ROW2_Y,
-    value,
-    secFlightBatteryColor()
-  );
-
-  // Cell voltage.
-  if (mavlinkBatteryValid) {
-    snprintf(value, sizeof(value), "%.2fV", batteryCellVoltage);
-  } else {
-    snprintf(value, sizeof(value), "--");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_RIGHT_X,
-    SEC_FLIGHT_ROW2_Y,
-    value,
-    secFlightBatteryColor()
-  );
-
-  // Altitude.
-  if (mavlinkVfrHudValid) {
-    snprintf(
-      value,
-      sizeof(value),
-      "%ld%s",
-      lroundf(altitude_msl * CONFIG_GLASS_ALT_SCALE),
-      CONFIG_GLASS_ALT_LABEL
-    );
-  } else {
-    snprintf(value, sizeof(value), "LOST");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_LEFT_X,
-    SEC_FLIGHT_ROW3_Y,
-    value,
-    secFlightValidColor(mavlinkVfrHudValid)
-  );
-
-  // Airspeed.
-  if (mavlinkVfrHudValid) {
-    snprintf(
-      value,
-      sizeof(value),
-      "%ld%s",
-      lroundf(airspeed * CONFIG_GLASS_SPEED_SCALE),
-      CONFIG_GLASS_SPEED_LABEL
-    );
-  } else {
-    snprintf(value, sizeof(value), "LOST");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_RIGHT_X,
-    SEC_FLIGHT_ROW3_Y,
-    value,
-    secFlightValidColor(mavlinkVfrHudValid)
-  );
-
-  // Ground speed.
-  if (mavlinkVfrHudValid) {
-    snprintf(
-      value,
-      sizeof(value),
-      "%ld%s",
-      lroundf(groundspeed * CONFIG_GLASS_SPEED_SCALE),
-      CONFIG_GLASS_SPEED_LABEL
-    );
-  } else {
-    snprintf(value, sizeof(value), "LOST");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_LEFT_X,
-    SEC_FLIGHT_ROW4_Y,
-    value,
-    secFlightValidColor(mavlinkVfrHudValid)
-  );
-
-  // Arm state.
-  if (mavlinkHeartbeatValid) {
-    snprintf(value, sizeof(value), "%s", vehicleArmed ? "ARMED" : "SAFE");
-  } else {
-    snprintf(value, sizeof(value), "LOST");
-  }
-
-  secFlightUpdateTileValue(
-    SEC_FLIGHT_RIGHT_X,
-    SEC_FLIGHT_ROW4_Y,
-    value,
-    mavlinkHeartbeatValid ?
-      (vehicleArmed ? SEC_FLIGHT_WARN : SEC_FLIGHT_GOOD) :
-      SEC_FLIGHT_BAD
-  );
+  fsUpdateModePanel();
+  fsUpdateFlightTiles();
+  fsUpdateSystemTiles();
 }
